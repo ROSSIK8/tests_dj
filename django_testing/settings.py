@@ -131,5 +131,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 
 REST_FRAMEWORK = {
-    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
 }

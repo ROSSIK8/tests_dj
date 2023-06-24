@@ -30,10 +30,10 @@ def student_factory():
 @pytest.mark.django_db
 def test_retrieve_course(client, course_factory):
     courses = course_factory(_quantity=10)
-    response = client.get('/api/v1/courses/')
+    response = client.get('/api/v1/courses/1/')
     assert response.status_code == 200
-    first_course = Course.objects.first()
-    assert first_course.id == 1
+    data = response.json()
+    assert data['id'] == 1
 
 
 # проверка получения списка курсов
@@ -49,34 +49,34 @@ def test_list_courses(client, course_factory):
 @pytest.mark.django_db
 def test_filter_id_course(client, course_factory):
     courses = course_factory(_quantity=10)
-    response = client.get('/api/v1/courses/')
-    assert response.status_code == 200
     first_id = courses[0].id
     last_id = courses[-1].id
-    # first_id = Course.objects.first().id
-    # last_id = Course.objects.last().id
     course_id = randint(first_id, last_id)
-    filter_id_course = Course.objects.get(id=course_id)
-    assert course_id == filter_id_course.id
+    response = client.get(f'/api/v1/courses/{course_id}/')
+    assert response.status_code == 200
+    data = response.json()
+    assert data['id'] == course_id
 
 
 # проверка фильтрации списка курсов по name
 @pytest.mark.django_db
 def test_filter_name_course(client, course_factory):
     courses = course_factory(_quantity=10)
-    response = client.get('/api/v1/courses/')
-    assert response.status_code == 200
     names = [course.name for course in courses]
     course_name = choice(names)
-    filter_id_name = Course.objects.get(name=course_name)
-    assert course_name == filter_id_name.name
+    response = client.get(f'/api/v1/courses/?name={course_name}')
+    assert response.status_code == 200
+    data = response.json()
+    assert data[0]['name'] == course_name
 
 
 # тест успешного создания курса
 @pytest.mark.django_db
 def test_create_course(client):
+    count = Course.objects.count()
     response = client.post('/api/v1/courses/', data={'name': 'Python'})
     assert response.status_code == 201
+    assert count + 1 == Course.objects.count()
 
 
 # тест успешного обновления курса
@@ -84,8 +84,12 @@ def test_create_course(client):
 def test_update_course(client, course_factory, student_factory):
     course = course_factory(_quantity=1)
     student = student_factory(_quantity=1)
-    response = client.patch(f'/api/v1/courses/{course[0].id}/', data={'name': course[0].name, 'students': [student[0].id]})
-    assert response.status_code == 200
+    response_1 = client.get(f'/api/v1/courses/{course[0].id}/')
+    response_2 = client.patch(f'/api/v1/courses/{course[0].id}/', data={'name': course[0].name, 'students': [student[0].id]})
+    assert response_2.status_code == 200
+    data_1 = response_1.json()
+    data_2 = response_2.json()
+    assert data_1 != data_2
 
 
 # тест успешного удаления курса
